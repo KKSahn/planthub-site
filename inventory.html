@@ -194,7 +194,11 @@
       <section aria-labelledby="list-title">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
           <h2 id="list-title" class="text-[11px] font-semibold uppercase tracking-wider text-ink-400 dark:text-stone-400"></h2>
-          <button type="button" id="add-listing" class="auth-button account-button-small">Add a listing</button>
+          <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+            <!-- Says why the button is switched off. Only shown until there is a city. -->
+            <p id="add-listing-note" hidden class="text-sm text-clay-700 dark:text-clay-300">Add your city first to start listing.</p>
+            <button type="button" id="add-listing" class="auth-button account-button-small">Add a listing</button>
+          </div>
         </div>
         <div id="listings" class="inventory-list"></div>
       </section>
@@ -286,6 +290,7 @@
       $("nursery-needed").hidden = !needsCity;
       $("nursery-cancel").hidden = needsCity;
       $("add-listing").disabled = needsCity;
+      $("add-listing-note").hidden = !needsCity;
     }
 
     function drawFreshness() {
