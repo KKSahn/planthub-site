@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<!--
+  signin.html — sign in, or reset a forgotten password.
+
+  Three views share the page:
+    signin.html           the sign-in form
+    signin.html#forgot    ask for a reset link by email
+    (the reset link)      choose a new password
+
+  Every link we email lands here. Whatever it was for, the page works out
+  where to go next once it knows who is signed in.
+
+  Creating an account happens on signup.html.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in - PlantHub</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen flex flex-col bg-cream text-ink-900 dark:bg-ink-950 dark:text-stone-100 font-sans antialiased">
+
+  <header class="page flex items-center justify-between py-4">
+    <a href="index.html" class="font-display font-semibold text-xl tracking-tight inline-flex items-center gap-2 hover:text-clay-700 dark:hover:text-clay-300">
+      PlantHub<span class="w-2 h-2 rounded-full bg-signal-500" aria-hidden="true"></span>
+    </a>
+    <!-- The light-or-dark switch (store.js draws it). -->
+    <div data-theme-toggle></div>
+  </header>
+
+  <main class="page flex-1 flex flex-col items-center py-8">
+    <div class="w-full max-w-md">
+
+      <!-- ===== Sign in ================================================== -->
+      <div id="view-signin">
+        <section class="auth-card" aria-labelledby="login-title">
+          <h1 id="login-title" class="font-display font-semibold text-3xl tracking-tight">Sign in</h1>
+          <p class="mt-1 text-sm text-ink-400 dark:text-stone-400">Welcome back.</p>
+
+          <!-- Filled in after a password reset or when a page sent you here. -->
+          <p id="login-note" role="status" hidden class="auth-note mt-4"></p>
+
+          <form id="login-form" class="mt-6 space-y-4" novalidate>
+            <div>
+              <label class="auth-label" for="login-email">Email</label>
+              <input class="auth-input" id="login-email" type="email" maxlength="254" autocomplete="email">
+            </div>
+            <div>
+              <div class="flex items-baseline justify-between">
+                <label class="auth-label" for="login-password">Password</label>
+                <a href="#forgot" class="auth-link text-[13px]">Forgot password?</a>
+              </div>
+              <input class="auth-input" id="login-password" type="password" autocomplete="current-password">
+            </div>
+            <p id="login-error" role="alert" hidden class="auth-error"></p>
+            <button type="button" id="resend" hidden class="auth-link text-sm">Send the link again</button>
+            <button type="submit" id="login-button" class="auth-button">Sign in</button>
+          </form>
+        </section>
+
+        <!-- ===== Create an account ====================================== -->
+        <section class="auth-card mt-6 text-center" aria-labelledby="create-title">
+          <h2 id="create-title" class="font-display font-semibold text-2xl tracking-tight">New to PlantHub?</h2>
+          <a href="signup.html" id="create-link" class="auth-button auth-button-outline mt-4 inline-block">Create an account</a>
+        </section>
+      </div>
+
+      <!-- ===== Forgot password ========================================== -->
+      <div id="view-forgot" hidden>
+        <section class="auth-card" aria-labelledby="forgot-title">
+          <h1 id="forgot-title" class="font-display font-semibold text-3xl tracking-tight">Reset your password</h1>
+          <p class="mt-1 text-sm text-ink-400 dark:text-stone-400">
+            We'll email you a link to choose a new one.
+          </p>
+
+          <form id="forgot-form" class="mt-6 space-y-4" novalidate>
+            <div>
+              <label class="auth-label" for="forgot-email">Email</label>
+              <input class="auth-input" id="forgot-email" type="email" maxlength="254" autocomplete="email">
+            </div>
+            <p id="forgot-error" role="alert" hidden class="auth-error"></p>
+            <button type="submit" id="forgot-button" class="auth-button">Email me a link</button>
+          </form>
+        </section>
+        <div class="text-center"><a href="#" class="step-back">Back to sign in</a></div>
+      </div>
+
+      <!-- ===== Choose a new password: where the emailed link lands ======== -->
+      <div id="view-new" hidden>
+        <section class="auth-card" aria-labelledby="new-title">
+          <h1 id="new-title" class="font-display font-semibold text-3xl tracking-tight">Choose a new password</h1>
+          <form id="new-form" class="mt-6 space-y-4" novalidate>
+            <div>
+              <label class="auth-label" for="new-password">New password</label>
+              <input class="auth-input" id="new-password" type="password" autocomplete="new-password">
+              <p class="auth-hint">At least 8 characters.</p>
+            </div>
+            <p id="new-error" role="alert" hidden class="auth-error"></p>
+            <button type="submit" id="new-button" class="auth-button">Save new password</button>
+          </form>
+        </section>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="page py-6 text-center text-[13px] text-ink-400 dark:text-stone-500">
+    <p data-site-footer></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
+  <script src="config.js"></script>
+  <script src="store.js"></script>
+  <script>
+    const $ = function (id) { return document.getElementById(id); };
+    const loginNote = $("login-note");
+    const loginError = $("login-error");
+    const forgotError = $("forgot-error");
+
+    function showError(box, message) {
+      box.textContent = message;
+      box.hidden = false;
+    }
+
+    function showNote(message) {
+      loginNote.textContent = message;
+      loginNote.hidden = false;
+    }
+
+    // Keep the "come back here afterwards" page when moving to sign-up.
+    if (location.search) $("create-link").href = "signup.html" + location.search;
+
+    // ---- Which view -------------------------------------------------------
+    let choosingPassword = false;
+
+    function showView() {
+      const forgot = !choosingPassword && location.hash === "#forgot";
+      $("view-signin").hidden = forgot || choosingPassword;
+      $("view-forgot").hidden = !forgot;
+      $("view-new").hidden = !choosingPassword;
+      loginError.hidden = true;
+      forgotError.hidden = true;
+      if (forgot) $("forgot-email").value = $("login-email").value;
+      window.scrollTo(0, 0);
+    }
+    window.addEventListener("hashchange", showView);
+    showView();
+
+    // A page that needs an account sends people here with ?next=that-page.
+    if (new URLSearchParams(location.search).get("next")) showNote("Sign in to continue.");
+
+    // ---- Who is here, and did an emailed link bring them? ------------------
+    // A refresh on "Choose a new password" must stay there: the person arrived
+    // by the link precisely because they don't know their current one.
+    const CHOOSING = "planthub.choosing-password";
+    function rememberChoosing(yes) {
+      try {
+        if (yes) sessionStorage.setItem(CHOOSING, "1");
+        else sessionStorage.removeItem(CHOOSING);
+      } catch (error) { /* this browser won't keep it; a refresh loses the screen */ }
+    }
+    function wasChoosing() {
+      try { return sessionStorage.getItem(CHOOSING) === "1"; } catch (error) { return false; }
+    }
+
+    PH.ready.then(function () {
+      if (PH.linkProblem) {
+        // The link's own words are not shown: anyone can write them in an address.
+        history.replaceState(null, "", location.pathname + location.search);
+        showNote("That link didn't work, or it has run out. Links work once. Sign in, or ask for a new one.");
+      }
+      if (PH.arrivedHalfway) {
+        history.replaceState(null, "", location.pathname + location.search);
+        if (PH.currentUser()) {
+          location.replace("account.html?email=halfway");
+          return;
+        }
+        showNote("That's one address confirmed. Open the link we sent to your other address to finish changing your email.");
+      }
+      if (!PH.currentUser()) {
+        rememberChoosing(false);
+        return;
+      }
+
+      if (PH.arrivedBy === "recovery" || wasChoosing()) {
+        rememberChoosing(true);
+        choosingPassword = true;
+        showView();
+      } else if (PH.arrivedBy === "signup") {
+        location.replace("account.html?welcome=1");
+      } else if (PH.arrivedBy === "email_change") {
+        location.replace("account.html?email=changed");
+      } else {
+        // Already signed in? There is nothing to do here.
+        location.replace(PH.nextPage("account.html"));
+      }
+    });
+
+    // ---- Sign in ----------------------------------------------------------
+    $("login-form").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const email = $("login-email").value;
+      const password = $("login-password").value;
+      $("resend").hidden = true;
+
+      if (!email.trim() || !password) {
+        showError(loginError, "Enter your email and password.");
+        return;
+      }
+      const result = await PH.whileBusy($("login-button"), "Signing in…", function () { return PH.signIn(email, password); });
+      if (!result.ok) {
+        $("login-password").value = "";
+        showError(loginError, result.error);
+        $("resend").hidden = !result.unconfirmed;
+        return;
+      }
+      location.href = PH.nextPage("account.html");
+    });
+
+    $("resend").addEventListener("click", async function () {
+      const result = await PH.whileBusy($("resend"), "Sending…", function () { return PH.resendConfirmation($("login-email").value); });
+      $("resend").hidden = true;
+      loginError.hidden = true;
+      if (result.ok) showNote("Sent. Open the link in that email, then sign in.");
+      else showError(loginError, result.error);
+    });
+
+    // ---- Forgot password --------------------------------------------------
+    $("forgot-form").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const email = $("forgot-email").value;
+      const result = await PH.whileBusy($("forgot-button"), "Sending…", function () { return PH.requestPasswordReset(email); });
+      if (!result.ok) {
+        showError(forgotError, result.error);
+        return;
+      }
+      $("login-email").value = email.trim();
+      location.hash = "";
+      // The same words whether or not that email has an account.
+      showNote("If that email has an account, a link is on its way. It can take a minute, and may land in spam.");
+    });
+
+    // ---- Choose a new password --------------------------------------------
+    $("new-form").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const result = await PH.whileBusy($("new-button"), "Saving…", function () { return PH.setNewPassword($("new-password").value); });
+      if (!result.ok) {
+        showError($("new-error"), result.error);
+        return;
+      }
+      rememberChoosing(false);
+      location.replace("account.html?password=changed");
+    });
+  </script>
+</body>
+</html>

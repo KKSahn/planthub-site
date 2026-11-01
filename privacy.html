@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!--
+  privacy.html: what the site collects, who sees what, and how to delete it.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy - PlantHub</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen flex flex-col bg-cream text-ink-900 dark:bg-ink-950 dark:text-stone-100 font-sans antialiased">
+
+  <header class="border-b border-ink-100 dark:border-ink-800">
+    <div class="page flex items-center justify-between gap-4 py-3.5">
+      <a href="index.html" class="font-display font-semibold text-2xl tracking-tight flex items-center gap-2 hover:text-clay-700 dark:hover:text-clay-300">
+        PlantHub<span class="shrink-0 w-2 h-2 rounded-full bg-signal-500" aria-hidden="true"></span>
+      </a>
+      <div data-account-corner class="account-corner"></div>
+    </div>
+  </header>
+
+  <main class="page flex-1 py-8">
+    <div class="mx-auto w-full max-w-2xl space-y-6 text-[15px] leading-relaxed text-ink-700 dark:text-stone-300">
+      <h1 class="font-display font-semibold text-3xl tracking-tight text-ink-900 dark:text-stone-100">Privacy</h1>
+
+      <section>
+        <h2 class="font-semibold text-ink-900 dark:text-stone-100">What we collect</h2>
+        <p class="mt-1">From growers who make an account: name, email, a password (stored scrambled, so nobody can read it), a phone number if you give one, your nursery's name, city and what you grow, your listings and your photos.</p>
+        <p class="mt-2">From visitors: you can browse without an account, and we don't ask who you are. We count visits using Cloudflare's analytics, which uses no cookies. Like any website, the services that deliver these pages see your device's internet address when they do (listed below).</p>
+      </section>
+
+      <section>
+        <h2 class="font-semibold text-ink-900 dark:text-stone-100">Why</h2>
+        <p class="mt-1">To run your account, show your listings, and send the emails the site needs: confirming your address and resetting your password. If you email us, we use your address to answer you.</p>
+      </section>
+
+      <section>
+        <h2 class="font-semibold text-ink-900 dark:text-stone-100">Who sees what</h2>
+        <p class="mt-1"><strong class="font-semibold">Anyone</strong> can see your nursery's name, city, state and what you grow, and each listing with its quantity, price, photos and the date you last confirmed it. These pages are public and search engines may show them. Your nursery stays private until you give it a city.</p>
+        <p class="mt-2"><strong class="font-semibold">Only you</strong> can see your email and phone number on the site. They are never shown to visitors or other growers.</p>
+        <p class="mt-2">Before a photo is sent, the site shrinks it, which also removes what the camera stored in the file, such as where it was taken.</p>
+      </section>
+
+      <section>
+        <h2 class="font-semibold text-ink-900 dark:text-stone-100">Who helps us run the site</h2>
+        <p class="mt-1">Supabase holds accounts, listings and photos, on servers in the United States. Cloudflare serves the site and handles our email address. Resend delivers the site's emails. The pages also load their fonts from Google Fonts, and code libraries from jsDelivr and Tailwind's content network. We don't sell your information and we don't show ads.</p>
+      </section>
+
+      <section>
+        <h2 class="font-semibold text-ink-900 dark:text-stone-100">Deleting your information</h2>
+        <p class="mt-1">Sign in, open your account page and press "Delete this account". Your account, nursery, listings and photos are removed straight away, and can't be brought back. If you can't sign in, email us and we'll do it for you.</p>
+      </section>
+
+      <section>
+        <h2 class="font-semibold text-ink-900 dark:text-stone-100">Questions</h2>
+        <p class="mt-1">Email <a class="auth-link" href="mailto:hello@theplanthub.co">hello@theplanthub.co</a>.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="page py-6 text-center text-[13px] text-ink-400 dark:text-stone-500">
+    <p data-site-footer></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
+  <script src="config.js"></script>
+  <script src="store.js"></script>
+</body>
+</html>

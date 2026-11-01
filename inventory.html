@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<!--
+  inventory.html — a grower's own listings.
+
+  This is the page the whole site leans on: buyers come for listings that
+  are current, and this is where a grower keeps them current. So the page
+  is built around one action, "still accurate", which stamps a listing with
+  today's date. It can be done for everything at once (the big button), for
+  one row, or by changing a row's quantity or price, since touching a
+  listing is confirming it.
+
+  Also here: add a listing, edit every field of one, remove one, and the
+  nursery's own name and city.
+
+  Every change goes to the database, so the directory shows it straight away.
+  Signed out? The page sends you to signin.html and comes back afterwards.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your inventory - PlantHub</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-needs-account class="min-h-screen flex flex-col bg-cream text-ink-900 dark:bg-ink-950 dark:text-stone-100 font-sans antialiased">
+
+  <header class="border-b border-ink-100 dark:border-ink-800">
+    <div class="page flex items-center justify-between gap-4 py-3.5">
+      <a href="index.html" class="font-display font-semibold text-2xl tracking-tight flex items-center gap-2 hover:text-clay-700 dark:hover:text-clay-300">
+        PlantHub<span class="shrink-0 w-2 h-2 rounded-full bg-signal-500" aria-hidden="true"></span>
+      </a>
+      <div data-account-corner class="account-corner"></div>
+    </div>
+  </header>
+
+  <main class="page flex-1 py-8">
+
+    <p id="loading" class="py-12 text-center text-[13px] text-ink-400 dark:text-stone-400">Loading your inventory…</p>
+
+    <!-- ===== The listings couldn't be loaded ============================== -->
+    <section id="load-error" hidden class="mx-auto max-w-xl auth-card text-center">
+      <p id="load-error-text" class="text-sm text-ink-700 dark:text-stone-300"></p>
+    </section>
+
+    <!-- ===== The grower's page =========================================== -->
+    <div id="grower-page" hidden class="space-y-6">
+
+      <!-- Title and the nursery it belongs to. -->
+      <section class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+        <div class="min-w-0">
+          <h1 class="font-display font-semibold text-3xl tracking-tight">Your inventory</h1>
+          <p class="mt-1 text-sm text-ink-400 dark:text-stone-400">
+            <span id="nursery-line"></span>
+            <button type="button" id="nursery-edit" class="auth-link ml-1">Edit nursery details</button>
+          </p>
+        </div>
+        <a id="buyer-view" href="grower.html" class="auth-link text-sm">See your page as buyers do</a>
+      </section>
+
+      <!-- Nursery name and city. Folded away unless the city is missing,
+           because buyers search by city and a listing needs one. -->
+      <section id="nursery-card" hidden class="auth-card" aria-labelledby="nursery-title">
+        <h2 id="nursery-title" class="font-display font-semibold text-xl tracking-tight">Nursery details</h2>
+        <p id="nursery-needed" hidden class="mt-1 text-sm text-ink-700 dark:text-stone-300">
+          Start here: buyers search by city, so your nursery needs one before you add listings.
+        </p>
+        <form id="nursery-form" class="mt-5 space-y-4" novalidate>
+          <div class="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label class="auth-label" for="nursery-name">Nursery name</label>
+              <input class="auth-input" id="nursery-name" type="text" maxlength="120" autocomplete="organization">
+              <p class="auth-hint">Everyone can see this name.</p>
+            </div>
+            <div>
+              <label class="auth-label" for="nursery-city">City</label>
+              <input class="auth-input" id="nursery-city" type="text" maxlength="80" autocomplete="address-level2">
+              <p class="auth-hint">The city only, like Wellington.</p>
+            </div>
+            <div>
+              <label class="auth-label" for="nursery-specialties">What you grow <span class="font-normal text-ink-400 dark:text-stone-400">(optional)</span></label>
+              <input class="auth-input" id="nursery-specialties" type="text" maxlength="400" placeholder="Palms, Hedges">
+              <p class="auth-hint">Separate with commas.</p>
+            </div>
+          </div>
+          <p id="nursery-error" role="alert" hidden class="auth-error"></p>
+          <div class="flex flex-wrap gap-3">
+            <button type="submit" id="nursery-save" class="auth-button account-button-small">Save nursery details</button>
+            <button type="button" id="nursery-cancel" class="auth-button auth-button-outline account-button-small">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ===== Freshness: the one-tap confirm ==========================
+           Green is used here because this is exactly what green means on
+           this site: how recently a listing was confirmed. -->
+      <section class="auth-card flex flex-wrap items-center justify-between gap-x-8 gap-y-4" aria-labelledby="fresh-title">
+        <div class="min-w-0">
+          <h2 id="fresh-title" class="font-semibold text-lg flex items-center gap-2">
+            <span id="fresh-dot" class="shrink-0 w-2.5 h-2.5 rounded-full"></span>
+            <span id="fresh-headline"></span>
+          </h2>
+          <p id="fresh-detail" class="mt-1 text-sm text-ink-700 dark:text-stone-300"></p>
+        </div>
+        <button type="button" id="confirm-all" class="auth-button account-button-small">Everything is still accurate</button>
+      </section>
+
+      <!-- ===== Add or edit a listing =====================================
+           One form does both. It is folded away until "Add a listing" or a
+           row's "Edit" is pressed. -->
+      <section id="listing-card" hidden class="auth-card" aria-labelledby="listing-title">
+        <h2 id="listing-title" class="font-display font-semibold text-xl tracking-tight">Add a listing</h2>
+        <form id="listing-form" class="mt-5 space-y-5" novalidate>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="auth-label" for="f-common">Common name</label>
+              <input class="auth-input" id="f-common" type="text" maxlength="120" placeholder="Clusia" autocomplete="off">
+            </div>
+            <div>
+              <label class="auth-label" for="f-botanical">Botanical name <span class="font-normal text-ink-400 dark:text-stone-400">(optional)</span></label>
+              <input class="auth-input" id="f-botanical" type="text" maxlength="160" placeholder="Clusia guttifera" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label class="auth-label" for="f-container">Container size</label>
+              <!-- The choices are filled in from CONTAINERS in shared.js. -->
+              <select class="auth-input" id="f-container"></select>
+            </div>
+            <div>
+              <label class="auth-label" for="f-quantity">Quantity on hand</label>
+              <input class="auth-input" id="f-quantity" type="number" min="0" step="1" inputmode="numeric">
+              <p class="auth-hint">The exact count, not "100+".</p>
+            </div>
+            <div>
+              <label class="auth-label" for="f-price">Wholesale price, each ($)</label>
+              <input class="auth-input" id="f-price" type="number" min="0" step="0.01" inputmode="decimal">
+            </div>
+          </div>
+
+          <fieldset>
+            <legend class="auth-label">Specs <span class="font-normal text-ink-400 dark:text-stone-400">(fill in only what you measured)</span></legend>
+            <div class="mt-1 grid gap-4 grid-cols-2 sm:grid-cols-4">
+              <div>
+                <label class="auth-hint block" for="f-caliper">Caliper, inches</label>
+                <input class="auth-input" id="f-caliper" type="number" min="0" step="0.25" inputmode="decimal">
+              </div>
+              <div>
+                <label class="auth-hint block" for="f-height">Height, feet</label>
+                <input class="auth-input" id="f-height" type="number" min="0" step="0.5" inputmode="decimal">
+              </div>
+              <div>
+                <label class="auth-hint block" for="f-spread">Spread, feet</label>
+                <input class="auth-input" id="f-spread" type="number" min="0" step="0.5" inputmode="decimal">
+              </div>
+              <div>
+                <label class="auth-hint block" for="f-clearTrunk">Clear trunk, feet</label>
+                <input class="auth-input" id="f-clearTrunk" type="number" min="0" step="0.5" inputmode="decimal">
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend class="auth-label">Grade and features</legend>
+            <!-- The tick boxes are filled in from GRADES in shared.js. -->
+            <div id="f-grades" class="mt-2 flex flex-wrap gap-2"></div>
+          </fieldset>
+
+          <fieldset>
+            <legend class="auth-label">Photos <span class="font-normal text-ink-400 dark:text-stone-400">(up to 5)</span></legend>
+            <div id="photo-list" class="mt-2 flex flex-wrap gap-3"></div>
+            <label class="mt-3 inline-block auth-button auth-button-outline account-button-small cursor-pointer" for="f-photos" id="photo-add">Add photos</label>
+            <input id="f-photos" type="file" accept="image/*" multiple class="sr-only">
+            <p id="photo-problem" role="alert" hidden class="auth-error"></p>
+            <p class="auth-hint">Listings with photos rank above equally fresh ones without.</p>
+          </fieldset>
+
+          <p id="listing-error" role="alert" hidden class="auth-error"></p>
+          <div class="flex flex-wrap gap-3">
+            <button type="submit" id="listing-save" class="auth-button account-button-small">Save listing</button>
+            <button type="button" id="listing-cancel" class="auth-button auth-button-outline account-button-small">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ===== The listings ============================================== -->
+      <section aria-labelledby="list-title">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <h2 id="list-title" class="text-[11px] font-semibold uppercase tracking-wider text-ink-400 dark:text-stone-400"></h2>
+          <button type="button" id="add-listing" class="auth-button account-button-small">Add a listing</button>
+        </div>
+        <div id="listings" class="inventory-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- A short message that appears after a change, then fades. -->
+  <p id="toast" role="status" aria-live="polite" class="toast" hidden></p>
+
+  <footer class="page py-6 text-center text-[13px] text-ink-400 dark:text-stone-500">
+    <p data-site-footer></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
+  <script src="config.js"></script>
+  <script src="shared.js"></script>
+  <script src="store.js"></script>
+  <script>
+    // -----------------------------------------------------------------------
+    // 1. Who is here? The page is drawn at the bottom, once that is known.
+    // -----------------------------------------------------------------------
+    let nursery = null;
+
+    const MAX_PHOTOS = 5;
+    const $ = function (id) { return document.getElementById(id); };
+
+    // -----------------------------------------------------------------------
+    // 2. Small helpers.
+    // -----------------------------------------------------------------------
+    function showError(box, message) { box.textContent = message; box.hidden = false; }
+
+    // The message at the bottom of the screen: "Saved."
+    function toast(message) {
+      const box = $("toast");
+      box.textContent = message;
+      box.hidden = false;
+      clearTimeout(box.timer);
+      box.timer = setTimeout(function () { box.hidden = true; }, 2800);
+    }
+
+    // "2026-10-09" -> "9 Oct"
+    function shortDate(isoDate) {
+      const date = new Date(isoDate + "T12:00:00");
+      return isNaN(date) ? isoDate : date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    }
+
+    function plural(count, word) { return count + " " + word + (count === 1 ? "" : "s"); }
+
+    // Saves run one at a time, in the order they were asked for. Each reads the
+    // listing as it stands when its turn comes, so a later save can't put back
+    // a number an earlier one has just changed.
+    let saves = Promise.resolve();
+    function inTurn(work) {
+      const turn = saves.then(work);
+      saves = turn.catch(function () {});
+      return turn;
+    }
+
+    // Apply a change through the store, then redraw. Returns the store's answer.
+    function apply(result, message) {
+      if (result.ok) {
+        nursery = result.nursery;
+        draw();
+        if (message) toast(message);
+      } else {
+        toast(result.error);
+      }
+      return result;
+    }
+
+    // -----------------------------------------------------------------------
+    // 3. Draw the page from the nursery.
+    // -----------------------------------------------------------------------
+    function draw() {
+      drawNurseryLine();
+      drawFreshness();
+      drawListings();
+    }
+
+    function drawNurseryLine() {
+      const place = nursery.city ? nursery.city + ", " + nursery.state : "no city yet";
+      $("nursery-line").textContent = nursery.name + " · " + place + ".";
+      $("buyer-view").href = "grower.html?id=" + encodeURIComponent(nursery.id);
+      $("buyer-view").hidden = !nursery.plants.length;
+
+      // No city: open the details form and hold back adding listings.
+      const needsCity = !nursery.city;
+      if (needsCity) openNurseryForm();
+      $("nursery-needed").hidden = !needsCity;
+      $("nursery-cancel").hidden = needsCity;
+      $("add-listing").disabled = needsCity;
+    }
+
+    function drawFreshness() {
+      const plants = nursery.plants;
+      const fresh = plants.filter(function (plant) { return daysSince(plant.updated) <= FRESH_DAYS; }).length;
+      const oldest = plants.reduce(function (most, plant) { return Math.max(most, daysSince(plant.updated)); }, 0);
+      const allFresh = plants.length > 0 && fresh === plants.length;
+
+      $("fresh-dot").className = "shrink-0 w-2.5 h-2.5 rounded-full " + (allFresh ? TIER_STYLE.fresh.dot : fresh ? TIER_STYLE.recent.dot : TIER_STYLE.stale.dot);
+      $("confirm-all").disabled = !plants.length;
+
+      if (!plants.length) {
+        $("fresh-headline").textContent = "No listings yet";
+        $("fresh-detail").textContent = "Add your first listing below. Buyers see how recently each one was confirmed, and the freshest come first.";
+      } else if (allFresh) {
+        $("fresh-headline").textContent = plants.length === 1 ? "Your listing is confirmed this week" : "All " + plants.length + " listings confirmed this week";
+        $("fresh-detail").textContent = "Buyers see the freshest listings first. Confirm again within " + FRESH_DAYS + " days to stay there.";
+      } else {
+        $("fresh-headline").textContent = fresh + " of " + plural(plants.length, "listing") + " confirmed this week";
+        $("fresh-detail").textContent = "The oldest was " + agoLong(oldest).toLowerCase() + ". Buyers see the freshest listings first, so older ones sink.";
+      }
+    }
+
+    // One listing, as a row: the plant, quantity and price you can change
+    // in place, how fresh it is, and what you can do with it.
+    function rowHtml(plant) {
+      const days = daysSince(plant.updated);
+      const style = TIER_STYLE[freshnessTier(days)];
+      const small = [plant.container, specText(plant), (plant.grades || []).join(", ")].filter(Boolean).join(" · ");
+      const photos = plant.photos ? " · " + plural(plant.photos, "photo") : "";
+      const id = escapeHtml(plant.id);
+
+      return (
+        '<article class="inventory-row" data-id="' + id + '">' +
+          '<div class="min-w-0">' +
+            '<p class="font-medium">' + escapeHtml(plant.common) + "</p>" +
+            (plant.botanical ? '<p class="italic text-[13px] text-ink-400 dark:text-stone-400">' + escapeHtml(plant.botanical) + "</p>" : "") +
+            '<p class="mt-0.5 text-[13px] text-ink-400 dark:text-stone-400">' + escapeHtml(small + photos) + "</p>" +
+            (plant.quantity === 0 ? '<p class="mt-1 text-[13px] font-medium text-clay-700 dark:text-clay-300">None left: hidden from buyers until the quantity is above zero.</p>' : "") +
+          "</div>" +
+
+          '<label class="inventory-field">' +
+            '<span class="inventory-field-label">Qty</span>' +
+            '<input class="auth-input inventory-input" type="number" min="0" step="1" inputmode="numeric" ' +
+                   'data-quick="quantity" value="' + plant.quantity + '" aria-label="Quantity of ' + escapeHtml(plant.common) + '">' +
+          "</label>" +
+
+          '<label class="inventory-field">' +
+            '<span class="inventory-field-label">Price $</span>' +
+            '<input class="auth-input inventory-input" type="number" min="0" step="0.01" inputmode="decimal" ' +
+                   'data-quick="price" value="' + plant.price.toFixed(2) + '" aria-label="Price of ' + escapeHtml(plant.common) + '">' +
+          "</label>" +
+
+          '<p class="inventory-fresh ' + style.text + '" title="' + escapeHtml(plant.updated || "no date") + '">' +
+            '<span class="w-2 h-2 rounded-full ' + style.dot + '"></span>' + agoLong(days) +
+          "</p>" +
+
+          '<div class="inventory-actions">' +
+            '<button type="button" class="row-button row-button-main" data-do="confirm"' + (days === 0 ? " disabled" : "") + ">Still accurate</button>" +
+            '<button type="button" class="row-button" data-do="edit">Edit</button>' +
+            '<button type="button" class="row-button" data-do="remove">Remove</button>' +
+          "</div>" +
+
+          // Takes the place of the buttons when "Remove" is pressed.
+          '<div class="inventory-confirm" hidden>' +
+            '<span class="text-sm text-clay-700 dark:text-clay-300">Remove this listing?</span>' +
+            '<button type="button" class="row-button row-button-danger" data-do="remove-yes">Yes, remove</button>' +
+            '<button type="button" class="row-button" data-do="remove-no">Keep</button>' +
+          "</div>" +
+
+          '<p class="inventory-row-error auth-error" role="alert" hidden></p>' +
+        "</article>"
+      );
+    }
+
+    // Update one row where it stands. Its quantity and price boxes stay on the
+    // page, so a grower who has moved on to the next box keeps what they are
+    // typing, and only a box with nothing in hand is given the saved number. A
+    // "Remove this listing?" question and any message on the row stay as well.
+    function refreshRow(row, plant) {
+      const holder = document.createElement("div");
+      holder.innerHTML = rowHtml(plant);
+      const fresh = holder.firstElementChild;
+      Array.from(row.children).forEach(function (part, index) {
+        const replacement = fresh.children[index];
+        if (part.classList.contains("inventory-field")) {
+          const box = part.querySelector("input");
+          const inHand = box.dataset.typing || Number(box.dataset.saving);
+          if (!inHand) box.value = replacement.querySelector("input").value;
+        } else if (part.classList.contains("inventory-actions")) {
+          const asking = part.hidden;
+          part.replaceWith(replacement.cloneNode(true));
+          row.querySelector(".inventory-actions").hidden = asking;
+        } else if (!part.classList.contains("inventory-confirm") && !part.classList.contains("inventory-row-error")) {
+          part.replaceWith(replacement.cloneNode(true));
+        }
+      });
+    }
+
+    // Rows are kept, not rebuilt, even when one comes or goes. A new one is put
+    // in its place, and the others aren't touched.
+    function drawListings() {
+      const plants = nursery.plants;
+      const list = $("listings");
+      $("list-title").textContent = plural(plants.length, "listing");
+
+      if (!plants.length) {
+        list.innerHTML = '<p class="auth-card text-sm text-ink-700 dark:text-stone-300">Nothing listed yet. Press "Add a listing" to put your first plant in front of buyers.</p>';
+        return;
+      }
+      const rows = {};
+      list.querySelectorAll(".inventory-row").forEach(function (row) { rows[row.dataset.id] = row; });
+      const wanted = plants.map(function (plant) { return plant.id; });
+      Array.from(list.children).forEach(function (child) {
+        if (wanted.indexOf(child.dataset.id) === -1) child.remove();
+      });
+
+      let next = list.firstElementChild;
+      plants.forEach(function (plant) {
+        let row = rows[plant.id];
+        if (row) {
+          refreshRow(row, plant);
+        } else {
+          const holder = document.createElement("div");
+          holder.innerHTML = rowHtml(plant);
+          row = holder.firstElementChild;
+        }
+        if (row === next) next = next.nextElementSibling;
+        else list.insertBefore(row, next);
+      });
+    }
+
+    function findPlant(id) {
+      return nursery.plants.find(function (plant) { return plant.id === id; });
+    }
+
+    // -----------------------------------------------------------------------
+    // 4. Nursery details.
+    // -----------------------------------------------------------------------
+    function openNurseryForm() {
+      $("nursery-name").value = nursery.name;
+      $("nursery-city").value = nursery.city;
+      $("nursery-specialties").value = (nursery.specialties || []).join(", ");
+      $("nursery-error").hidden = true;
+      $("nursery-card").hidden = false;
+    }
+
+    // -----------------------------------------------------------------------
+    // 5. The add / edit form.
+    // -----------------------------------------------------------------------
+    let editingId = null;      // the listing being edited, or null when adding
+    let formPhotos = [];       // pictures in the form: stored ones, then new ones
+    let formTurn = 0;          // goes up each time the form opens or closes
+    let photoWork = Promise.resolve();   // photos still being shrunk, one pick at a time
+    let formSaving = false;    // true from pressing Save until the answer comes
+
+    function drawFormPhotos() {
+      const list = formPhotos || [];
+      $("photo-list").innerHTML = list.map(function (photo, index) {
+        return (
+          '<figure class="photo-thumb">' +
+            '<img src="' + escapeHtml(photo.path ? PH.photoUrl(photo.path, true) : photo.preview) + '" alt="Photo ' + (index + 1) + '">' +
+            '<figcaption>added ' + escapeHtml(shortDate(photo.added)) + "</figcaption>" +
+            '<button type="button" data-photo="' + index + '" aria-label="Remove photo ' + (index + 1) + '">&times;</button>' +
+          "</figure>"
+        );
+      }).join("");
+      $("photo-add").hidden = list.length >= MAX_PHOTOS;
+    }
+
+    function openListingForm(plant) {
+      if (formSaving) {
+        toast("One moment: still saving that listing.");
+        return;
+      }
+      formTurn++;
+      editingId = plant ? plant.id : null;
+      formPhotos = plant ? plant.photoList.slice() : [];
+
+      $("listing-title").textContent = plant ? "Edit " + plant.common : "Add a listing";
+      $("f-common").value = plant ? plant.common : "";
+      $("f-botanical").value = plant ? plant.botanical || "" : "";
+      $("f-container").value = plant ? plant.container : "";
+      $("f-quantity").value = plant ? plant.quantity : "";
+      $("f-price").value = plant ? plant.price.toFixed(2) : "";
+      SPECS.forEach(function (spec) {
+        $("f-" + spec.key).value = plant && plant[spec.key] !== undefined ? plant[spec.key] : "";
+      });
+      document.querySelectorAll("#f-grades input").forEach(function (box) {
+        box.checked = !!plant && (plant.grades || []).includes(box.value);
+      });
+
+      drawFormPhotos();
+      $("listing-error").hidden = true;
+      $("photo-problem").hidden = true;
+      $("listing-card").hidden = false;
+      $("listing-card").scrollIntoView({ behavior: "smooth", block: "start" });
+      $("f-common").focus({ preventScroll: true });
+    }
+
+    function closeListingForm() {
+      formTurn++;
+      $("listing-card").hidden = true;
+      editingId = null;
+      formPhotos = [];
+    }
+
+    // One picture made smaller, as a JPEG.
+    function shrunk(image, longestSide, quality) {
+      const scale = Math.min(1, longestSide / Math.max(image.width, image.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(image.width * scale);
+      canvas.height = Math.round(image.height * scale);
+      canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+      return new Promise(function (resolve) { canvas.toBlob(resolve, "image/jpeg", quality); });
+    }
+
+    // A phone's photo is far bigger than the page needs, so it is shrunk here
+    // before it is sent, once for viewing and once as a thumbnail. Redrawing it
+    // also leaves behind what the camera stored in the file, such as where the
+    // picture was taken. Answers null for a file the browser can't read.
+    function shrinkPhoto(file) {
+      return new Promise(function (resolve) {
+        const image = new Image();
+        image.onload = async function () {
+          try {
+            const full = await shrunk(image, 1200, 0.8);
+            const thumb = await shrunk(image, 320, 0.7);
+            resolve(full && thumb ? { full: full, thumb: thumb, preview: URL.createObjectURL(thumb), added: isoToday() } : null);
+          } catch (error) {
+            resolve(null);
+          }
+          URL.revokeObjectURL(image.src);
+        };
+        image.onerror = function () { URL.revokeObjectURL(image.src); resolve(null); };
+        image.src = URL.createObjectURL(file);
+      });
+    }
+
+    // Today, only for the caption beside a new photo. The database sets the
+    // date that is kept.
+    function isoToday() {
+      const now = new Date();
+      return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+    }
+
+    // -----------------------------------------------------------------------
+    // 6. Wire everything up.
+    // -----------------------------------------------------------------------
+    function wireUp() {
+      // Fill the pick list and the tick boxes from the shared vocabulary.
+      $("f-container").innerHTML = '<option value="">Choose…</option>' + CONTAINERS.map(function (name) {
+        return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + "</option>";
+      }).join("");
+      $("f-grades").innerHTML = GRADES.map(function (grade) {
+        return '<label class="grade-tick"><input type="checkbox" value="' + escapeHtml(grade) + '"><span>' + escapeHtml(grade) + "</span></label>";
+      }).join("");
+
+      draw();
+
+      // ---- Nursery details ----
+      $("nursery-edit").addEventListener("click", openNurseryForm);
+      $("nursery-cancel").addEventListener("click", function () { $("nursery-card").hidden = true; });
+      $("nursery-form").addEventListener("submit", async function (event) {
+        event.preventDefault();
+        const result = await PH.whileBusy($("nursery-save"), "Saving…", function () {
+          return PH.saveNursery({
+            name: $("nursery-name").value,
+            city: $("nursery-city").value,
+            specialties: $("nursery-specialties").value,
+          });
+        });
+        if (!result.ok) {
+          showError($("nursery-error"), result.error);
+          if (result.field) $(result.field).focus();
+          return;
+        }
+        $("nursery-card").hidden = true;
+        apply(result, "Nursery details saved.");
+        document.dispatchEvent(new Event("planthub:account-changed"));
+      });
+
+      // ---- One tap for everything ----
+      $("confirm-all").addEventListener("click", async function () {
+        apply(await PH.whileBusy($("confirm-all"), "Saving…", function () { return inTurn(PH.confirmAll); }), "Everything confirmed today.");
+      });
+
+      // ---- Add / edit form ----
+      $("add-listing").addEventListener("click", function () { openListingForm(null); });
+      $("listing-cancel").addEventListener("click", closeListingForm);
+
+      // Picks are worked through one at a time, so two quick ones can't go over
+      // the limit between them. If the form has closed meanwhile they are dropped.
+      $("f-photos").addEventListener("change", function (event) {
+        const chosen = Array.from(event.target.files);
+        event.target.value = "";
+        const turn = formTurn;
+        $("photo-add").textContent = "Preparing photos…";
+
+        photoWork = photoWork.then(async function () {
+          if (turn !== formTurn) return;
+          const files = chosen.slice(0, MAX_PHOTOS - formPhotos.length);
+          const made = await Promise.all(files.map(shrinkPhoto));
+          if (turn !== formTurn) return;
+          const added = made.filter(Boolean);
+          formPhotos = formPhotos.concat(added);
+          drawFormPhotos();
+
+          // Say what didn't make it, rather than leaving the grower guessing.
+          const problems = [];
+          if (added.length < files.length) problems.push("A file couldn't be read as a picture. Try a JPEG or PNG.");
+          if (chosen.length > files.length) problems.push("A listing can have " + MAX_PHOTOS + " photos at most.");
+          $("photo-problem").textContent = problems.join(" ");
+          $("photo-problem").hidden = !problems.length;
+        }).catch(function () {
+          $("photo-problem").textContent = "A file couldn't be read as a picture. Try a JPEG or PNG.";
+          $("photo-problem").hidden = false;
+        }).finally(function () {
+          $("photo-add").textContent = "Add photos";
+        });
+      });
+
+      $("photo-list").addEventListener("click", function (event) {
+        const button = event.target.closest("[data-photo]");
+        if (!button) return;
+        formPhotos.splice(Number(button.dataset.photo), 1);
+        $("photo-problem").hidden = true;
+        drawFormPhotos();
+      });
+
+      $("listing-form").addEventListener("submit", async function (event) {
+        event.preventDefault();
+        if (formSaving) return;
+        const savingId = editingId;
+        const wasEditing = !!editingId;
+        const turn = formTurn;
+
+        // Until the answer comes, the form holds still: Cancel would only look
+        // as if it stopped a save already on its way, and what is in the boxes
+        // is what gets saved.
+        formSaving = true;
+        $("listing-form").inert = true;
+        const result = await PH.whileBusy($("listing-save"), "Saving…", function () {
+          return inTurn(async function () {
+            // Photos still being shrunk belong to this save, and the boxes are
+            // read last, so they include any change just made on the row.
+            await photoWork;
+            const details = {
+              id: savingId,
+              common: $("f-common").value,
+              botanical: $("f-botanical").value,
+              container: $("f-container").value,
+              quantity: $("f-quantity").value,
+              price: $("f-price").value,
+              grades: Array.from(document.querySelectorAll("#f-grades input:checked")).map(function (box) { return box.value; }),
+              photoList: formPhotos,
+            };
+            SPECS.forEach(function (spec) { details[spec.key] = $("f-" + spec.key).value; });
+            return PH.saveListing(details);
+          });
+        });
+        formSaving = false;
+        $("listing-form").inert = false;
+
+        if (!result.ok) {
+          showError($("listing-error"), result.error);
+          // The form may have closed meanwhile, with the listing removed.
+          if ($("listing-card").hidden) toast(result.error);
+          else if (result.field) $("f-" + result.field).focus();
+          return;
+        }
+        // Don't close the form if another listing has been opened in it since.
+        if (turn === formTurn) closeListingForm();
+        apply(result, wasEditing ? "Listing saved and confirmed today." : "Listing added. Buyers can see it now.");
+      });
+
+      // ---- Buttons on a row ----
+      $("listings").addEventListener("click", async function (event) {
+        const button = event.target.closest("[data-do]");
+        if (!button) return;
+        const row = button.closest(".inventory-row");
+        const id = row.dataset.id;
+        const action = button.dataset.do;
+
+        if (action === "confirm") {
+          const result = apply(await PH.whileBusy(button, "Saving…", function () { return inTurn(function () { return PH.confirmListing(id); }); }), "Confirmed today.");
+          if (result.ok) row.querySelector(".inventory-row-error").hidden = true;
+        }
+        if (action === "edit") openListingForm(findPlant(id));
+        if (action === "remove" || action === "remove-no") {
+          row.querySelector(".inventory-actions").hidden = action === "remove";
+          row.querySelector(".inventory-confirm").hidden = action !== "remove";
+        }
+        if (action === "remove-yes") {
+          const result = await PH.whileBusy(button, "Removing…", function () { return inTurn(function () { return PH.removeListing(id); }); });
+          if (result.ok) {
+            if (editingId === id) closeListingForm();
+            apply(result, "Listing removed.");
+          } else {
+            // The store refused: say why, on the row.
+            row.querySelector(".inventory-actions").hidden = false;
+            row.querySelector(".inventory-confirm").hidden = true;
+            showError(row.querySelector(".inventory-row-error"), result.error);
+          }
+        }
+      });
+
+      // ---- Quantity and price, changed right in the row ----
+      // Fires when the box is left or Enter is pressed. A bad number is
+      // refused, said so on the row, and the old value put back.
+      $("listings").addEventListener("input", function (event) {
+        const box = event.target.closest("[data-quick]");
+        if (box) box.dataset.typing = "1";
+      });
+
+      // A box left with no change to save goes back to showing what is saved. (A
+      // real change has already gone off to be saved by the time this runs.)
+      function showSaved(box, id, field) {
+        const saved = findPlant(id);
+        if (saved) box.value = field === "price" ? saved.price.toFixed(2) : saved.quantity;
+      }
+      $("listings").addEventListener("focusout", function (event) {
+        const box = event.target.closest("[data-quick]");
+        if (!box) return;
+        delete box.dataset.typing;
+        if (!Number(box.dataset.saving)) showSaved(box, box.closest(".inventory-row").dataset.id, box.dataset.quick);
+      });
+
+      $("listings").addEventListener("change", function (event) {
+        const box = event.target.closest("[data-quick]");
+        if (!box) return;
+        const row = box.closest(".inventory-row");
+        const id = row.dataset.id;
+        const field = box.dataset.quick;
+        const value = box.value;
+        delete box.dataset.typing;
+        box.dataset.saving = Number(box.dataset.saving || 0) + 1;
+        // The form open on this listing mustn't save the old number back.
+        if (editingId === id) $("f-" + field).value = value;
+
+        inTurn(async function () {
+          const plant = findPlant(id);
+          if (!plant) return;
+          const details = Object.assign({}, plant);
+          details[field] = value;
+
+          const result = await PH.saveListing(details).catch(function () {
+            return { ok: false, error: "Couldn't reach PlantHub. Check your connection and try again." };
+          });
+          box.dataset.saving = Number(box.dataset.saving) - 1;
+          const error = row.querySelector(".inventory-row-error");
+          if (!result.ok) {
+            if (!box.dataset.typing && !Number(box.dataset.saving)) showSaved(box, id, field);
+            // The form open on this listing goes back to the saved number too.
+            const saved = findPlant(id);
+            if (editingId === id && saved) $("f-" + field).value = field === "price" ? saved.price.toFixed(2) : saved.quantity;
+            showError(error, result.error);
+            return;
+          }
+          error.hidden = true;
+          apply(result, (field === "price" ? "Price" : "Quantity") + " saved and confirmed today.");
+        });
+      });
+
+      // Enter in a row's box saves it, like leaving the box does.
+      $("listings").addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && event.target.closest("[data-quick]")) event.target.blur();
+      });
+    }
+
+    // -----------------------------------------------------------------------
+    // 7. Start: nobody signed in goes to sign in; a grower gets their page.
+    // -----------------------------------------------------------------------
+    PH.ready.then(async function () {
+      function cantLoad(message) {
+        $("loading").hidden = true;
+        $("load-error-text").textContent = message;
+        $("load-error").hidden = false;
+      }
+      if (PH.connectionProblem()) {
+        cantLoad("Couldn't reach PlantHub. Check your connection and refresh the page.");
+        return;
+      }
+      if (!PH.currentUser()) {
+        location.replace("signin.html?next=inventory.html");
+        return;
+      }
+      const result = await PH.loadMyNursery();
+      if (!result.ok) {
+        cantLoad(result.error);
+        return;
+      }
+      nursery = result.nursery;
+      $("loading").hidden = true;
+      $("grower-page").hidden = false;
+      wireUp();
+    });
+  </script>
+</body>
+</html>

@@ -1,72 +1,101 @@
 <!DOCTYPE html>
 <!--
-  index.html — the holding page.
+  index.html — the front page.
 
-  Shown on theplanthub.co until the first version of the site is ready.
-  One wordmark and one line, nothing to click. It has no light/dark switch,
-  so it simply follows the device's own setting.
+  Deliberately empty: a sign-in link, the wordmark, one search box, and a
+  round door into the plant directory. The search box hands whatever is
+  typed to the directory (directory.html), which does the real work.
 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PlantHub</title>
-  <meta name="description" content="PlantHub is coming soon.">
-  <meta name="theme-color" content="#f8f8f5">
+  <meta name="description" content="Wholesale plant listings from Florida growers, with the date each one was last confirmed.">
+
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <style>
-    :root {
-      --page: #f8f8f5;   /* off-white */
-      --text: #0b1710;   /* near-black green */
-      --quiet: #4a6b5a;  /* muted green-grey */
-      --dot: #22c55e;    /* the fresh-listing green */
-    }
-    @media (prefers-color-scheme: dark) {
-      :root { --page: #060f0a; --text: #f5f5f4; --quiet: #a8a29e; }
-    }
-    html, body { height: 100%; margin: 0; }
-    body {
-      background: var(--page);
-      color: var(--text);
-      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 0 16px 8vh;
-      box-sizing: border-box;
-      text-align: center;
-    }
-    h1 {
-      font-family: Fraunces, ui-serif, Georgia, serif;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      font-size: clamp(3rem, 12vw, 4.5rem);
-      line-height: 1;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    /* The green dot from the logo. */
-    h1 span {
-      width: 0.22em;
-      height: 0.22em;
-      border-radius: 50%;
-      background: var(--dot);
-      flex-shrink: 0;
-    }
-    p { margin: 1rem 0 0; color: var(--quiet); font-size: 1.125rem; }
-  </style>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <h1>PlantHub<span aria-hidden="true"></span></h1>
-  <p>Coming soon.</p>
+<body class="min-h-screen flex flex-col bg-cream text-ink-900 dark:bg-ink-950 dark:text-stone-100 font-sans antialiased">
+
+  <!-- ===== Top bar: just the account corner, on the right ============= -->
+  <header class="page flex justify-end py-4">
+    <!-- store.js fills this in: "Sign in", or your name and "Sign out". -->
+    <div data-account-corner class="account-corner"></div>
+  </header>
+
+  <!-- ===== The middle of the page ===================================== -->
+  <main class="page flex-1 flex flex-col items-center justify-center pb-16">
+
+    <!-- The wordmark, big. The green dot is the same one that marks a fresh
+         listing in the directory — green still means fresh, nothing else. -->
+    <h1 class="font-display font-semibold tracking-tight text-5xl sm:text-7xl flex items-center gap-3">
+      PlantHub<span class="shrink-0 w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-signal-500" aria-hidden="true"></span>
+    </h1>
+    <p class="mt-3 text-ink-400 dark:text-stone-400 text-center">
+      Find it, move it, grow it.
+    </p>
+    <!-- The search box. A plain form: pressing Enter opens
+         directory.html?q=whatever-was-typed, and the directory picks it up. -->
+    <form action="directory.html" method="get" role="search" class="mt-8 w-full max-w-2xl">
+      <label class="sr-only" for="q">Search for a plant</label>
+      <div class="relative">
+        <svg class="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400 pointer-events-none"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path>
+        </svg>
+        <input id="q" name="q" type="search" autocomplete="off"
+               placeholder="Search a plant, vendor or city"
+               class="w-full rounded-full pl-11 sm:pl-14 pr-[5.5rem] sm:pr-28 py-4 text-base placeholder:text-sm sm:placeholder:text-base
+                      bg-white dark:bg-ink-900 border border-ink-300 dark:border-ink-700
+                      shadow-sm placeholder:text-ink-400 dark:placeholder:text-stone-500
+                      focus:outline-none focus:ring-2 focus:ring-clay-500 focus:border-transparent transition">
+        <button type="submit"
+                class="absolute right-2 top-1/2 -translate-y-1/2 px-4 sm:px-5 py-2.5 rounded-full text-sm font-semibold
+                       bg-ink-900 text-cream dark:bg-cream dark:text-ink-900
+                       hover:bg-ink-700 dark:hover:bg-sand focus:outline-none focus-visible:ring-2 focus-visible:ring-clay-500 transition">
+          Search
+        </button>
+      </div>
+    </form>
+
+    <!-- ===== The door into the directory ================================ -->
+    <nav aria-label="Sections" class="mt-12 w-full max-w-3xl">
+      <ul class="flex flex-wrap justify-center gap-x-6 gap-y-8 sm:gap-x-2">
+        <li>
+          <a href="directory.html" class="door">
+            <span class="door-circle">
+              <!-- A storefront: nurseries and what they have. -->
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v10h16V10"/><path d="M3 10l2-6h14l2 6"/><path d="M3 10a3 3 0 0 0 6 0a3 3 0 0 0 6 0a3 3 0 0 0 6 0"/><path d="M10 20v-5h4v5"/></svg>
+            </span>
+            <span class="door-label">Plant Directory</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
+  <script src="config.js"></script>
+  <script src="store.js"></script>
+  <script>
+    // On a computer, put the cursor straight in the search box. Not on a
+    // phone: there it would pop the keyboard up over the page.
+    if (window.matchMedia("(min-width: 1024px)").matches) {
+      document.getElementById("q").focus();
+    }
+  </script>
+
+  <footer class="page py-6 text-center text-[13px] text-ink-400 dark:text-stone-500">
+    <p data-site-footer></p>
+  </footer>
 </body>
 </html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<!--
+  account.html — the grower's own page.
+
+  Three parts, top to bottom:
+
+    1. Who you are: your name and the kind of account.
+    2. Your pages: one row of links (inventory, the plant directory). Each
+       link says where things stand, so the row is a summary as well as a
+       way to get around.
+    3. Account settings: one card with a row per subject. The subject is
+       named on the left and its boxes and buttons sit on the right.
+
+  Nobody signed in? The page sends them to signin.html and comes back
+  afterwards.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your account - PlantHub</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-needs-account class="min-h-screen flex flex-col bg-cream text-ink-900 dark:bg-ink-950 dark:text-stone-100 font-sans antialiased">
+
+  <header class="border-b border-ink-100 dark:border-ink-800">
+    <div class="page flex items-center justify-between gap-4 py-3.5">
+      <a href="index.html" class="font-display font-semibold text-2xl tracking-tight flex items-center gap-2 hover:text-clay-700 dark:hover:text-clay-300">
+        PlantHub<span class="shrink-0 w-2 h-2 rounded-full bg-signal-500" aria-hidden="true"></span>
+      </a>
+      <div data-account-corner class="account-corner"></div>
+    </div>
+  </header>
+
+  <main class="page flex-1 py-8">
+    <p id="loading" class="py-12 text-center text-[13px] text-ink-400 dark:text-stone-400">Loading your account…</p>
+
+    <div id="account-page" hidden class="mx-auto w-full max-w-4xl">
+
+      <!-- Shown once, straight after signing up. -->
+      <p id="welcome" role="status" hidden class="auth-note mb-6"></p>
+
+      <!-- ===== 1. Who you are ============================================= -->
+      <section class="flex items-center gap-4">
+        <span id="big-initial" class="account-initial" aria-hidden="true"></span>
+        <div class="min-w-0">
+          <h1 id="account-name" class="font-display font-semibold text-3xl tracking-tight truncate"></h1>
+          <p id="account-kind" class="mt-0.5 text-sm text-ink-400 dark:text-stone-400"></p>
+        </div>
+      </section>
+
+      <!-- ===== 2. Your pages ============================================== -->
+      <!-- One row of links, drawn by the script for the kind of account. -->
+      <nav id="pages" class="account-nav mt-6" aria-label="Your pages"></nav>
+
+      <!-- ===== 3. Account settings ======================================== -->
+      <h2 class="mt-10 font-display font-semibold text-xl tracking-tight">Account settings</h2>
+
+      <div class="auth-card mt-4">
+
+        <!-- Your details -->
+        <section class="settings-row" aria-labelledby="details-title">
+          <div>
+            <h3 id="details-title" class="settings-name">Your details</h3>
+            <p id="details-help" class="settings-help"></p>
+          </div>
+          <form id="profile-form" class="space-y-4" novalidate>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="auth-label" for="name">Name</label>
+                <input class="auth-input" id="name" type="text" maxlength="120" autocomplete="name">
+              </div>
+              <div>
+                <label class="auth-label" for="email">Email</label>
+                <input class="auth-input" id="email" type="email" maxlength="254" autocomplete="email">
+              </div>
+              <div>
+                <label class="auth-label" for="phone">Phone <span class="font-normal text-ink-400 dark:text-stone-400">(optional)</span></label>
+                <input class="auth-input" id="phone" type="tel" maxlength="40" autocomplete="tel">
+              </div>
+              <div id="business-field">
+                <label class="auth-label" for="business">Nursery name</label>
+                <input class="auth-input" id="business" type="text" maxlength="120" autocomplete="organization">
+              </div>
+            </div>
+            <p id="profile-error" role="alert" hidden class="auth-error"></p>
+            <p id="email-pending" role="status" hidden class="auth-note"></p>
+            <div class="flex items-center gap-4">
+              <button type="submit" id="profile-button" class="auth-button account-button-small">Save details</button>
+              <span id="profile-saved" role="status" hidden class="text-sm text-ink-400 dark:text-stone-400">Saved.</span>
+            </div>
+          </form>
+        </section>
+
+        <!-- Password -->
+        <section class="settings-row" aria-labelledby="password-title">
+          <div>
+            <h3 id="password-title" class="settings-name">Password</h3>
+            <p class="settings-help">At least 8 characters.</p>
+          </div>
+          <form id="password-form" class="space-y-4" novalidate>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="auth-label" for="old-password">Current password</label>
+                <input class="auth-input" id="old-password" type="password" autocomplete="current-password">
+              </div>
+              <div>
+                <label class="auth-label" for="new-password">New password</label>
+                <input class="auth-input" id="new-password" type="password" autocomplete="new-password">
+              </div>
+            </div>
+            <p id="password-error" role="alert" hidden class="auth-error"></p>
+            <div class="flex items-center gap-4">
+              <button type="submit" id="password-button" class="auth-button account-button-small">Change password</button>
+              <span id="password-saved" role="status" hidden class="text-sm text-ink-400 dark:text-stone-400">Password changed.</span>
+            </div>
+          </form>
+        </section>
+
+        <!-- The ways out -->
+        <section class="settings-row" aria-labelledby="leave-title">
+          <div>
+            <h3 id="leave-title" class="settings-name">Leaving</h3>
+            <p class="settings-help">Sign out of this browser, or close the account for good.</p>
+          </div>
+          <div>
+            <div class="flex flex-wrap gap-3">
+              <button type="button" data-sign-out class="auth-button auth-button-outline account-button-small">Sign out</button>
+              <button type="button" id="delete-start" class="auth-button auth-button-outline account-button-small account-button-danger">Delete this account</button>
+            </div>
+
+            <!-- Opens when "Delete this account" is pressed: a second look
+                 before something that can't be undone. -->
+            <div id="delete-confirm" hidden class="ask-first mt-4">
+              <p id="delete-question" class="text-sm text-clay-700 dark:text-clay-300">Delete this account for good? This can't be undone.</p>
+              <p id="delete-error" role="alert" hidden class="auth-error mt-3"></p>
+              <div class="mt-3 flex flex-wrap gap-3">
+                <button type="button" id="delete-yes" class="auth-button account-button-small account-button-danger-solid">Yes, delete it</button>
+                <button type="button" id="delete-no" class="auth-button auth-button-outline account-button-small">Keep my account</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="page py-6 text-center text-[13px] text-ink-400 dark:text-stone-500">
+    <p data-site-footer></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
+  <script src="config.js"></script>
+  <script src="store.js"></script>
+  <script>
+    let user = null;
+    let listingCount = 0;
+
+    function showError(box, message) { box.textContent = message; box.hidden = false; }
+
+    // Say "Saved." for a moment, then take it away again.
+    function flash(element) {
+      element.hidden = false;
+      clearTimeout(element.timer);
+      element.timer = setTimeout(function () { element.hidden = true; }, 2500);
+    }
+
+    // "2026-10-08" -> "8 October 2026"
+    function niceDate(isoDate) {
+      const date = new Date(isoDate + "T12:00:00");
+      return isNaN(date) ? isoDate : date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    }
+
+    function plural(count, word) { return count + " " + word + (count === 1 ? "" : "s"); }
+
+    // ---- 2. Your pages ------------------------------------------------------
+    // The grower's links. Each is { name, href, note, waiting }: `note` is
+    // the line under the name, and `waiting` (a count of things needing the
+    // grower) turns the note clay and puts the number beside the name.
+    function pageLinks() {
+      return [
+        { name: "Inventory", href: "inventory.html", note: listingCount ? plural(listingCount, "listing") + " to keep current" : "Add your first listing" },
+        { name: "Plant directory", href: "directory.html", note: "Browse listings and prices" },
+      ];
+    }
+
+    function drawPages() {
+      const links = pageLinks();
+      const nav = document.getElementById("pages");
+      // The row has exactly as many columns as there are links.
+      nav.style.setProperty("--links", links.length);
+      nav.innerHTML = links.map(function (link) {
+        return (
+          '<a class="account-nav-link" href="' + link.href + '">' +
+            '<span class="account-nav-name">' + PH.escapeHtml(link.name) +
+              (link.waiting ? ' <span class="corner-count">' + link.waiting + "</span>" : "") + "</span>" +
+            '<span class="account-nav-note' + (link.waiting ? " account-nav-note-waiting" : "") + '">' + PH.escapeHtml(link.note) + "</span>" +
+          "</a>"
+        );
+      }).join("");
+    }
+
+    // ---- Fill the page from the account -----------------------------------
+    function draw() {
+      document.getElementById("big-initial").textContent = user.name.charAt(0).toUpperCase();
+      document.getElementById("account-name").textContent = user.name;
+      document.getElementById("account-kind").textContent =
+        user.typeName + " account, since " + niceDate(user.created);
+
+      drawPages();
+
+      document.getElementById("name").value = user.name;
+      document.getElementById("email").value = user.email;
+      document.getElementById("phone").value = user.phone || "";
+      document.getElementById("business").value = user.business || "";
+
+      document.getElementById("details-help").textContent =
+        "Visitors see your nursery's name. They are never shown your phone or email.";
+    }
+
+    // Wait to learn who is here. Nobody? Go and sign in, then come straight back.
+    PH.ready.then(async function () {
+      if (PH.connectionProblem()) {
+        document.getElementById("loading").textContent = "Couldn't reach PlantHub. Check your connection and refresh the page.";
+        return;
+      }
+      user = PH.currentUser();
+      if (!user) {
+        location.replace("signin.html?next=account.html");
+        return;
+      }
+      document.getElementById("loading").hidden = true;
+      document.getElementById("account-page").hidden = false;
+      draw();
+
+      const params = new URLSearchParams(location.search);
+      const greetings = {
+        welcome: "Welcome to PlantHub, " + user.name + ". Your grower account is ready.",
+        email: params.get("email") === "halfway"
+          ? "That's one address confirmed. Open the link we sent to your other address to finish changing your email."
+          : "Your new email address is in place.",
+        password: "Your new password is saved.",
+      };
+      const said = Object.keys(greetings).find(function (key) { return params.get(key); });
+      if (said) {
+        const welcome = document.getElementById("welcome");
+        welcome.textContent = greetings[said];
+        welcome.hidden = false;
+        // Drop it from the address so a refresh doesn't say it twice.
+        history.replaceState(null, "", location.pathname);
+      }
+
+      // The "Inventory" link counts the grower's listings.
+      const mine = await PH.loadMyNursery();
+      if (mine.ok) {
+        listingCount = mine.nursery.plants.length;
+        drawPages();
+      }
+    });
+
+    // ---- Save details ------------------------------------------------------
+    const profileError = document.getElementById("profile-error");
+    document.getElementById("profile-form").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const pending = document.getElementById("email-pending");
+      const result = await PH.whileBusy(document.getElementById("profile-button"), "Saving…", function () {
+        return PH.updateProfile({
+          name: document.getElementById("name").value,
+          email: document.getElementById("email").value,
+          phone: document.getElementById("phone").value,
+          business: document.getElementById("business").value,
+        });
+      });
+      if (!result.ok) {
+        showError(profileError, result.error);
+        return;
+      }
+      profileError.hidden = true;
+      user = result.user;
+      const typedEmail = document.getElementById("email").value.trim();
+      draw();
+      // A new address only takes over once the link sent to it is opened.
+      pending.hidden = !result.emailPending;
+      if (result.emailPending) {
+        pending.textContent = "To finish changing your email, open the links we just sent to your current address and to " + typedEmail + ". Until then, keep signing in with your current one.";
+      }
+      // The name in the top corner may have changed too.
+      document.dispatchEvent(new Event("planthub:account-changed"));
+      flash(document.getElementById("profile-saved"));
+    });
+
+    // ---- Change password ---------------------------------------------------
+    const passwordError = document.getElementById("password-error");
+    document.getElementById("password-form").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const form = event.target;
+      const result = await PH.whileBusy(document.getElementById("password-button"), "Saving…", function () {
+        return PH.changePassword(
+          document.getElementById("old-password").value,
+          document.getElementById("new-password").value
+        );
+      });
+      if (!result.ok) {
+        showError(passwordError, result.error);
+        return;
+      }
+      passwordError.hidden = true;
+      form.reset();
+      flash(document.getElementById("password-saved"));
+    });
+
+    // ---- Delete the account, after a second look ---------------------------
+    const deleteConfirm = document.getElementById("delete-confirm");
+    document.getElementById("delete-start").addEventListener("click", function () {
+      document.getElementById("delete-question").textContent =
+        "Delete this account for good? Your nursery, its listings and its photos go with it. This can't be undone.";
+      deleteConfirm.hidden = false;
+      deleteConfirm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+    document.getElementById("delete-no").addEventListener("click", function () { deleteConfirm.hidden = true; });
+    document.getElementById("delete-yes").addEventListener("click", async function (event) {
+      const result = await PH.whileBusy(event.target, "Deleting…", function () { return PH.deleteAccount(); });
+      if (!result.ok) {
+        showError(document.getElementById("delete-error"), result.error);
+        return;
+      }
+      location.href = "index.html";
+    });
+
+  </script>
+</body>
+</html>

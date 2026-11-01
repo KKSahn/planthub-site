@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<!--
+  directory.html — the plant directory. The front page's search box lands
+  here.
+  HTML describes WHAT is on the page (headings, boxes, text).
+  The look comes from Tailwind CSS (loaded below, no install needed — it's a
+  single <script> tag) plus a few extras in styles.css, and the search
+  behaviour comes from app.js.
+
+  The shape of this page is deliberate: a filter rail on the left and one dense
+  table on the right, a row per listing, because a buyer sourcing thirty items
+  compares listings, not nurseries. Quantity, price and the date the listing
+  was last confirmed are all out in the open.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Tells phones to use their real width instead of pretending to be a desktop. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plant Directory - PlantHub</title>
+  <meta name="description" content="Wholesale plant listings from Florida growers. Container size, grade, quantity on hand, price, and the date each grower last confirmed the listing.">
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+  <!-- Two typefaces: Fraunces for the wordmark only, Inter for everything
+       else. Keeping the serif to the logo is what separates a trade tool from
+       a garden-centre brochure. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS, loaded straight from a CDN: no npm, no build step. -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- PlantHub's colours and fonts, shared with every page. -->
+  <script src="theme.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-cream text-ink-900 dark:bg-ink-950 dark:text-stone-100 font-sans antialiased">
+
+  <!-- ===== Header ======================================================
+       The same light look as the front page: the wordmark (back to the front
+       page), a search box, and Sign in. A search typed on the front page
+       lands here with the box already filled in.
+       On a phone the search box drops to its own line under the other two. -->
+  <header class="border-b border-ink-100 dark:border-ink-800">
+    <div class="page flex flex-wrap items-center gap-x-6 gap-y-3 py-3.5">
+
+      <!-- The green dot is the same dot that marks a fresh listing below. -->
+      <a href="index.html" class="font-display font-semibold text-2xl tracking-tight flex items-center gap-2 hover:text-clay-700 dark:hover:text-clay-300">
+        PlantHub<span class="shrink-0 w-2 h-2 rounded-full bg-signal-500" aria-hidden="true"></span>
+      </a>
+
+      <div class="header-search relative order-last sm:order-none w-full sm:w-auto sm:flex-1 sm:max-w-2xl">
+        <label class="sr-only" for="search">Search for a plant</label>
+        <!-- Magnifying glass, drawn with SVG so it stays crisp at any size. -->
+        <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400 pointer-events-none"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path>
+        </svg>
+        <input
+          type="search"
+          id="search"
+          placeholder="Search a plant, vendor or city"
+          autocomplete="off"
+          class="w-full rounded-full pl-11 pr-20 py-2.5 text-base sm:text-sm
+                 bg-white dark:bg-ink-900 border border-ink-300 dark:border-ink-700 shadow-sm
+                 placeholder:text-ink-400 dark:placeholder:text-stone-500
+                 focus:outline-none focus:ring-2 focus:ring-clay-500 focus:border-transparent transition">
+        <!-- Shown only while there is something to clear (app.js decides). -->
+        <button type="button" id="clear"
+          class="hidden absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded-full text-[13px] font-medium
+                 text-ink-400 hover:text-clay-700 dark:hover:text-clay-300 transition">
+          Clear
+        </button>
+      </div>
+
+      <!-- store.js fills this in: "Sign in", or your name and "Sign out". -->
+      <div data-account-corner class="account-corner ml-auto"></div>
+    </div>
+  </header>
+
+  <!-- The page's heading, for screen readers and search engines. -->
+  <h1 class="sr-only">Plant directory: wholesale plant listings from Florida growers</h1>
+
+  <main class="page py-5">
+    <div class="lg:flex lg:items-start lg:gap-6">
+
+      <!-- ===== Filter rail ===========================================
+           Filters down the left with a count beside each one, the way the
+           trade expects. app.js fills each list; the markup here is just the
+           frame. -->
+      <aside class="lg:w-56 lg:shrink-0 mb-4 lg:mb-0">
+        <!-- A <details> element: a box the browser can fold shut. On a phone it
+             starts shut, because three facet lists would otherwise push every
+             result off the screen. On a laptop app.js opens it on load. -->
+        <details id="filter-panel"
+                 class="lg:sticky lg:top-4 data-card">
+
+          <summary class="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none
+                          text-[11px] font-semibold uppercase tracking-wider
+                          text-ink-400 dark:text-stone-400">
+            <span>Filter</span>
+            <!-- How many filters are on, so a shut panel still says so. -->
+            <span id="filter-count"
+                  class="hidden text-[11px] font-semibold normal-case tracking-normal
+                         text-clay-700 dark:text-clay-300 bg-sand dark:bg-ink-800
+                         rounded-sm px-1.5"></span>
+
+            <button type="button" id="reset-filters"
+              class="ml-auto text-[12px] font-medium normal-case tracking-normal
+                     text-clay-600 dark:text-clay-300 hover:underline hidden">
+              Reset
+            </button>
+            <svg class="lg:hidden w-4 h-4 shrink-0 transition-transform" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+          </summary>
+
+          <div class="border-t border-ink-100 dark:border-ink-800">
+            <!-- Freshness earns the green: it is the one filter about how
+                 current a listing is. -->
+            <div class="px-3 py-2.5 border-b border-ink-100 dark:border-ink-800">
+              <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
+                <input type="checkbox" id="fresh-only"
+                       class="w-3.5 h-3.5 rounded-sm border-ink-200 text-signal-600 focus:ring-signal-500 focus:ring-offset-0">
+                <span>Updated this week</span>
+              </label>
+            </div>
+
+            <!-- Which state the vendor is in. app.js draws it from the data. -->
+            <div data-facet="state" class="facet"></div>
+
+            <!-- The four ways a listing is described. A value belongs to ONE
+                 of them only. app.js draws the tick-box lists and every count.
+                 1. Container size: a pick list. -->
+            <div data-facet="container" class="facet"></div>
+
+            <!-- 2. Specs: the smallest the buyer will accept. Listings that
+                 don't give a measurement drop out once a minimum is set. -->
+            <div class="px-3 py-2.5 border-b border-ink-100 dark:border-ink-800">
+              <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ink-400 dark:text-stone-400 mb-1.5">
+                Specs <span class="normal-case tracking-normal font-normal">(at least)</span>
+              </h3>
+              <div class="space-y-1.5 text-[13px]">
+                <div class="flex items-center gap-2">
+                  <label for="spec-caliper" class="flex-1">Caliper</label>
+                  <input id="spec-caliper" data-spec="caliper" type="number" min="0" step="any" inputmode="decimal" placeholder="min"
+                         class="spec-input">
+                  <span class="spec-unit-fixed">in</span>
+                  <span data-spec-count="caliper" class="w-6 text-right text-[11px] tabular-nums text-ink-400 dark:text-stone-400"></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <label for="spec-height" class="flex-1">Height</label>
+                  <input id="spec-height" data-spec="height" type="number" min="0" step="any" inputmode="decimal" placeholder="min"
+                         class="spec-input">
+                  <select data-spec-unit="height" aria-label="Height unit" class="spec-unit"><option value="ft">ft</option><option value="in">in</option></select>
+                  <span data-spec-count="height" class="w-6 text-right text-[11px] tabular-nums text-ink-400 dark:text-stone-400"></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <label for="spec-spread" class="flex-1">Spread</label>
+                  <input id="spec-spread" data-spec="spread" type="number" min="0" step="any" inputmode="decimal" placeholder="min"
+                         class="spec-input">
+                  <select data-spec-unit="spread" aria-label="Spread unit" class="spec-unit"><option value="ft">ft</option><option value="in">in</option></select>
+                  <span data-spec-count="spread" class="w-6 text-right text-[11px] tabular-nums text-ink-400 dark:text-stone-400"></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <label for="spec-clearTrunk" class="flex-1">Clear trunk</label>
+                  <input id="spec-clearTrunk" data-spec="clearTrunk" type="number" min="0" step="any" inputmode="decimal" placeholder="min"
+                         class="spec-input">
+                  <span class="spec-unit-fixed">ft</span>
+                  <span data-spec-count="clearTrunk" class="w-6 text-right text-[11px] tabular-nums text-ink-400 dark:text-stone-400"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Grade and features, 4. Photos, and where the nursery is. -->
+            <div data-facet="grades" class="facet"></div>
+            <div data-facet="photos" class="facet"></div>
+            <div data-facet="city"   class="facet"></div>
+
+            <!-- Phones only: the panel covers the results, so this closes it
+                 and jumps to them. app.js keeps the number up to date. -->
+            <div class="lg:hidden p-3">
+              <button type="button" id="show-results" class="auth-button">Show listings</button>
+            </div>
+          </div>
+        </details>
+      </aside>
+
+      <!-- ===== Results =============================================== -->
+      <section class="min-w-0 flex-1">
+
+        <!-- Hidden until there is something to count and sort (app.js). -->
+        <div id="results-bar" class="flex flex-wrap items-center justify-between gap-3 mb-2.5">
+          <p class="text-[13px] text-ink-400 dark:text-stone-400" id="count"></p>
+
+          <div class="flex items-center gap-2">
+            <label class="text-[13px] text-ink-400 dark:text-stone-400" for="sort">Sort</label>
+            <select id="sort"
+              class="text-[13px] font-medium px-2.5 py-1.5 rounded-lg border border-ink-100 dark:border-ink-700
+                     bg-white dark:bg-ink-900 text-ink-800 dark:text-stone-200
+                     focus:outline-none focus:ring-2 focus:ring-clay-500 transition">
+              <option value="fresh">Freshest first</option>
+              <option value="qty">Most in stock</option>
+              <option value="price">Lowest price</option>
+              <option value="plant">Plant A to Z</option>
+              <option value="nursery">Vendor A to Z</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Any filters currently on, shown as removable tags. -->
+        <div id="active-filters" class="flex flex-wrap gap-1.5 mb-2.5 empty:hidden"></div>
+
+        <!-- app.js fills this with the listing table once something is searched
+             or filtered. Before that it holds a short prompt: a buyer comes
+             here knowing what they want, so nothing is listed up front. -->
+        <div id="results"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="border-t border-ink-100 dark:border-ink-800 mt-8">
+    <div class="page py-7">
+      <div class="max-w-3xl space-y-2 text-[13px] text-ink-400 dark:text-stone-400">
+        <p>
+          Every listing shows the date the grower last confirmed it. Everything here,
+          prices included, is open to browse. An account is needed to list plants.
+        </p>
+        <p data-site-footer></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Order matters: each of these uses the ones before it. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
+  <script src="config.js"></script>
+  <script src="shared.js"></script>
+  <script src="store.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
