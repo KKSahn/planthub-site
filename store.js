@@ -188,7 +188,7 @@ const PH = (function () {
     if (!db) return { ok: false, error: NO_CONNECTION };
     const name = String(details.name || "").trim();
     const email = cleanEmail(details.email);
-    if (!name) return { ok: false, field: "name", error: "Enter your name." };
+    if (!name) return { ok: false, field: "name", error: "Enter your company name." };
     if (!looksLikeEmail(email)) return { ok: false, field: "email", error: "Enter an email address, like name@example.com." };
     const problem = passwordProblem(details.password);
     if (problem) return { ok: false, field: "password", error: problem };

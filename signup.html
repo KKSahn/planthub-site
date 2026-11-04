@@ -2,7 +2,7 @@
 <!--
   signup.html — create a grower account.
 
-  One form: name, email, password. Only growers can sign up for now, so
+  One form: company name, email, and the password typed twice. Only growers can sign up for now, so
   there is no question about what kind of account it is.
 
   "Create account" asks the database to make it. If the email has to be
@@ -52,8 +52,8 @@
 
         <form id="signup-form" class="mt-6 space-y-4" novalidate>
           <div>
-            <label class="auth-label" for="name">Name</label>
-            <input class="auth-input" id="name" type="text" maxlength="120" autocomplete="name">
+            <label class="auth-label" for="name">Company name</label>
+            <input class="auth-input" id="name" type="text" maxlength="120" autocomplete="organization">
           </div>
           <div>
             <label class="auth-label" for="email">Email</label>
@@ -63,6 +63,10 @@
             <label class="auth-label" for="password">Password</label>
             <input class="auth-input" id="password" type="password" autocomplete="new-password">
             <p class="auth-hint">At least 8 characters.</p>
+          </div>
+          <div>
+            <label class="auth-label" for="password-again">Confirm password</label>
+            <input class="auth-input" id="password-again" type="password" autocomplete="new-password">
           </div>
 
           <p id="form-error" role="alert" hidden class="auth-error"></p>
@@ -95,6 +99,16 @@
     // Check the answers and ask for the account.
     document.getElementById("signup-form").addEventListener("submit", async function (event) {
       event.preventDefault();
+
+      // A slip in a password can't be seen, so it is typed twice.
+      const password = document.getElementById("password").value;
+      if (password && password !== document.getElementById("password-again").value) {
+        errorBox.textContent = "The two passwords don't match. Type them again.";
+        errorBox.hidden = false;
+        document.getElementById("password-again").value = "";
+        document.getElementById("password-again").focus();
+        return;
+      }
 
       const result = await PH.whileBusy(document.getElementById("signup-button"), "Creating your account…", function () {
         return PH.signUp({
