@@ -154,7 +154,8 @@ const PH = (function () {
       id: user.id,
       type: profile.data.account_type,
       typeName: "Grower",
-      name: profile.data.name,
+      // The account goes by its nursery's name; there is no separate person's name.
+      name: nursery.data ? nursery.data.name : profile.data.name,
       email: user.email,
       phone: profile.data.phone,
       created: localDay(profile.data.created_at),
@@ -267,11 +268,11 @@ const PH = (function () {
 
   async function updateProfile(changes) {
     if (!me) return { ok: false, error: "You are signed out." };
-    const name = String(changes.name || "").trim();
     const email = cleanEmail(changes.email);
     const phone = String(changes.phone || "").trim();
     const business = String(changes.business || "").trim();
-    if (!name) return { ok: false, field: "name", error: "Enter your name." };
+    // The profile keeps the same name as the nursery, so the two never disagree.
+    const name = business;
     if (!looksLikeEmail(email)) return { ok: false, field: "email", error: "Enter an email address, like name@example.com." };
     if (!business) return { ok: false, field: "business", error: "Enter the nursery's name." };
 
@@ -445,6 +446,10 @@ const PH = (function () {
     mine.city = data.city;
     mine.specialties = data.specialties || [];
     me.business = data.name;
+    me.name = data.name;
+    // The private profile keeps the same name, as on the account page. If that
+    // save fails, nothing a visitor sees is wrong, so it isn't reported.
+    await db.from("profiles").update({ name: data.name }).eq("id", me.id);
     return { ok: true, nursery: mine };
   }
 

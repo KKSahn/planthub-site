@@ -73,10 +73,6 @@
           <form id="profile-form" class="space-y-4" novalidate>
             <div class="grid gap-4 sm:grid-cols-2">
               <div>
-                <label class="auth-label" for="name">Name</label>
-                <input class="auth-input" id="name" type="text" maxlength="120" autocomplete="name">
-              </div>
-              <div>
                 <label class="auth-label" for="email">Email</label>
                 <input class="auth-input" id="email" type="email" maxlength="254" autocomplete="email">
               </div>
@@ -216,7 +212,6 @@
 
       drawPages();
 
-      document.getElementById("name").value = user.name;
       document.getElementById("email").value = user.email;
       document.getElementById("phone").value = user.phone || "";
       document.getElementById("business").value = user.business || "";
@@ -272,7 +267,6 @@
       const pending = document.getElementById("email-pending");
       const result = await PH.whileBusy(document.getElementById("profile-button"), "Saving…", function () {
         return PH.updateProfile({
-          name: document.getElementById("name").value,
           email: document.getElementById("email").value,
           phone: document.getElementById("phone").value,
           business: document.getElementById("business").value,
