@@ -237,7 +237,6 @@
 
       const params = new URLSearchParams(location.search);
       const greetings = {
-        welcome: "Welcome to PlantHub, " + user.name + ". Your grower account is ready.",
         email: params.get("email") === "halfway"
           ? "That's one address confirmed. Open the link we sent to your other address to finish changing your email."
           : "Your new email address is in place.",

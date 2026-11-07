@@ -51,6 +51,9 @@
     <!-- ===== The grower's page =========================================== -->
     <div id="grower-page" hidden class="space-y-6">
 
+      <!-- Said once, to a grower whose account has just been made. -->
+      <p id="welcome" role="status" hidden class="auth-note"></p>
+
       <!-- Title and the nursery it belongs to. -->
       <section class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
         <div class="min-w-0">
@@ -117,15 +120,18 @@
         <h2 id="listing-title" class="font-display font-semibold text-xl tracking-tight">Add a listing</h2>
         <form id="listing-form" class="mt-5 space-y-5" novalidate>
 
-          <div class="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label class="auth-label" for="f-common">Common name</label>
-              <input class="auth-input" id="f-common" type="text" maxlength="120" placeholder="Clusia" autocomplete="off">
-            </div>
-            <div>
-              <label class="auth-label" for="f-botanical">Botanical name <span class="font-normal text-ink-400 dark:text-stone-400">(optional)</span></label>
-              <input class="auth-input" id="f-botanical" type="text" maxlength="160" placeholder="Clusia guttifera" autocomplete="off">
-            </div>
+          <!-- The plant comes from the plant list: typing only searches it, so
+               every listing of a plant goes by the same two names. -->
+          <div class="plant-picker">
+            <label class="auth-label" for="f-plant">Plant</label>
+            <input class="auth-input" id="f-plant" type="text" role="combobox" autocomplete="off" spellcheck="false"
+                   aria-autocomplete="list" aria-expanded="false" aria-controls="plant-options" aria-describedby="plant-chosen"
+                   placeholder="Type a common or botanical name">
+            <ul id="plant-options" class="plant-options" role="listbox" aria-label="Plants" hidden></ul>
+            <p id="plant-chosen" class="auth-hint">
+              <span id="plant-botanical" hidden></span>
+              <span id="plant-missing">Can't find it? <a class="auth-link" href="mailto:hello@theplanthub.co?subject=Please%20add%20a%20plant%20to%20the%20list">Email us</a> and we'll add it to the list.</span>
+            </p>
           </div>
 
           <div class="grid gap-4 sm:grid-cols-3">
@@ -471,8 +477,9 @@
       formPhotos = plant ? plant.photoList.slice() : [];
 
       $("listing-title").textContent = plant ? "Edit " + plant.common : "Add a listing";
-      $("f-common").value = plant ? plant.common : "";
-      $("f-botanical").value = plant ? plant.botanical || "" : "";
+      $("f-plant").value = "";
+      setChosenPlant(plant ? { id: plant.plantId, common: plant.common, botanical: plant.botanical } : null);
+      closePlantOptions();
       $("f-container").value = plant ? plant.container : "";
       $("f-quantity").value = plant ? plant.quantity : "";
       $("f-price").value = plant ? plant.price.toFixed(2) : "";
@@ -488,7 +495,7 @@
       $("photo-problem").hidden = true;
       $("listing-card").hidden = false;
       $("listing-card").scrollIntoView({ behavior: "smooth", block: "start" });
-      $("f-common").focus({ preventScroll: true });
+      $("f-plant").focus({ preventScroll: true });
     }
 
     function closeListingForm() {
@@ -537,6 +544,151 @@
       return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
     }
 
+    // ---- The plant picker ----
+    // Typing searches the plant list by common and botanical name; a plant is
+    // only chosen by picking it. Nothing typed is ever saved as a name.
+    let plantList = null;          // null while it loads
+    let plantListError = "";
+    let chosenPlant = null;        // { id, common, botanical }, or null
+    let shownPlants = [];          // what the open list is offering
+    let activeOption = -1;         // the one the arrow keys are on
+    const PICK_A_PLANT = "Pick a plant from the list.";   // what store.js says when none is
+
+    // "Clusia guttifera" and "clusia-gutt" both become "clusia gutt...":
+    // small letters and spaces only, so punctuation never stops a match.
+    function searchable(text) { return text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+
+    function plantListLoaded(result) {
+      plantListError = result.ok ? "" : result.error;
+      plantList = (result.ok ? result.plants : []).map(function (plant) {
+        return {
+          id: plant.id,
+          common: plant.common,
+          botanical: plant.botanical,
+          words: " " + searchable(plant.common + " " + plant.botanical),
+          commonWords: searchable(plant.common),
+        };
+      });
+      if (document.activeElement === $("f-plant") && !chosenPlant) showPlantOptions();
+    }
+
+    // Every word typed must start a word of one of the two names. Plants
+    // whose common name starts with what was typed come first.
+    function findPlants(typed) {
+      const query = searchable(typed);
+      if (!query) return [];
+      const words = query.split(" ");
+      return plantList
+        .filter(function (plant) {
+          return words.every(function (word) { return plant.words.indexOf(" " + word) !== -1; });
+        })
+        .map(function (plant) {
+          const rank = plant.commonWords.indexOf(query) === 0 ? 0
+            : (" " + plant.commonWords).indexOf(" " + words[0]) !== -1 ? 1 : 2;
+          return { plant: plant, rank: rank };
+        })
+        .sort(function (a, b) { return a.rank - b.rank || a.plant.common.localeCompare(b.plant.common); })
+        .map(function (found) { return found.plant; });
+    }
+
+    function showPlantOptions() {
+      const box = $("f-plant");
+      const list = $("plant-options");
+      const typed = box.value.trim();
+      activeOption = -1;
+      shownPlants = [];
+      if (!typed) { closePlantOptions(); return; }
+
+      let message = "";
+      if (plantList === null) message = "Loading the plant list…";
+      else if (plantListError) message = plantListError;
+      else {
+        shownPlants = findPlants(typed);
+        if (!shownPlants.length) message = "No plant on the list matches that. Email us below to add it.";
+      }
+      list.innerHTML = message
+        ? '<li class="plant-options-note" role="presentation">' + escapeHtml(message) + "</li>"
+        : shownPlants.map(function (plant, index) {
+            return '<li role="option" id="plant-option-' + index + '" data-index="' + index + '" aria-selected="false">' +
+              '<span class="plant-option-common">' + escapeHtml(plant.common) + "</span>" +
+              '<span class="plant-option-botanical">' + escapeHtml(plant.botanical) + "</span></li>";
+          }).join("");
+      list.hidden = false;
+      list.scrollTop = 0;
+      box.setAttribute("aria-expanded", "true");
+      box.removeAttribute("aria-activedescendant");
+    }
+
+    function closePlantOptions() {
+      $("plant-options").hidden = true;
+      $("f-plant").setAttribute("aria-expanded", "false");
+      $("f-plant").removeAttribute("aria-activedescendant");
+      activeOption = -1;
+    }
+
+    function moveActiveOption(step) {
+      if (!shownPlants.length) return;
+      activeOption = (activeOption + step + shownPlants.length) % shownPlants.length;
+      document.querySelectorAll("#plant-options [role=option]").forEach(function (option, index) {
+        option.setAttribute("aria-selected", index === activeOption ? "true" : "false");
+      });
+      const option = $("plant-option-" + activeOption);
+      option.scrollIntoView({ block: "nearest" });
+      $("f-plant").setAttribute("aria-activedescendant", option.id);
+    }
+
+    // Show the chosen plant's botanical name under the box or, with none
+    // chosen, how to get a missing plant added.
+    function setChosenPlant(plant) {
+      chosenPlant = plant ? { id: plant.id, common: plant.common, botanical: plant.botanical } : null;
+      if (plant) $("f-plant").value = plant.common;
+      $("plant-botanical").textContent = plant ? plant.botanical : "";
+      $("plant-botanical").hidden = !plant;
+      $("plant-missing").hidden = !!plant;
+      // A plant picked answers "Pick a plant from the list", so that goes.
+      if (plant && $("listing-error").textContent === PICK_A_PLANT) $("listing-error").hidden = true;
+    }
+
+    function wirePlantPicker() {
+      const box = $("f-plant");
+      box.addEventListener("input", function () {
+        if (chosenPlant && box.value !== chosenPlant.common) setChosenPlant(null);
+        showPlantOptions();
+      });
+      box.addEventListener("keydown", function (event) {
+        const open = !$("plant-options").hidden;
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          if (!open) showPlantOptions();
+          moveActiveOption(event.key === "ArrowDown" ? 1 : -1);
+        } else if (event.key === "Enter" && open) {
+          // Enter picks from the open list; it never sends the form.
+          event.preventDefault();
+          const pick = activeOption >= 0 ? shownPlants[activeOption] : shownPlants.length === 1 ? shownPlants[0] : null;
+          if (pick) { setChosenPlant(pick); closePlantOptions(); }
+        } else if (event.key === "Escape" && open) {
+          event.preventDefault();
+          closePlantOptions();
+        }
+      });
+      // Typing a name exactly, then moving on, counts as picking it.
+      box.addEventListener("blur", function () {
+        closePlantOptions();
+        if (chosenPlant || !plantList) return;
+        const typed = searchable(box.value);
+        const exact = plantList.find(function (plant) { return plant.commonWords === typed; });
+        if (typed && exact) setChosenPlant(exact);
+      });
+      // mousedown, not click: picking mustn't take the focus off the box first.
+      $("plant-options").addEventListener("mousedown", function (event) {
+        event.preventDefault();
+        const option = event.target.closest("[role=option]");
+        if (!option) return;
+        setChosenPlant(shownPlants[Number(option.dataset.index)]);
+        closePlantOptions();
+      });
+    }
+
     // -----------------------------------------------------------------------
     // 6. Wire everything up.
     // -----------------------------------------------------------------------
@@ -550,6 +702,7 @@
       }).join("");
 
       draw();
+      wirePlantPicker();
 
       // ---- Nursery details ----
       $("nursery-edit").addEventListener("click", openNurseryForm);
@@ -640,8 +793,7 @@
             await photoWork;
             const details = {
               id: savingId,
-              common: $("f-common").value,
-              botanical: $("f-botanical").value,
+              plantId: chosenPlant ? chosenPlant.id : null,
               container: $("f-container").value,
               quantity: $("f-quantity").value,
               price: $("f-price").value,
@@ -778,6 +930,8 @@
         location.replace("signin.html?next=inventory.html");
         return;
       }
+      // The plant list comes in alongside; the form waits for it if need be.
+      PH.loadPlantList().then(plantListLoaded);
       const result = await PH.loadMyNursery();
       if (!result.ok) {
         cantLoad(result.error);
@@ -786,6 +940,12 @@
       nursery = result.nursery;
       $("loading").hidden = true;
       $("grower-page").hidden = false;
+      if (new URLSearchParams(location.search).get("welcome")) {
+        $("welcome").textContent = "Welcome to PlantHub, " + nursery.name + ". Your grower account is ready.";
+        $("welcome").hidden = false;
+        // Drop it from the address so a refresh doesn't say it twice.
+        history.replaceState(null, "", location.pathname);
+      }
       wireUp();
     });
   </script>

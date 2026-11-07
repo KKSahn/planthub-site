@@ -543,6 +543,36 @@ html.dark .account-button-danger-solid:hover { background: #e0a877; }
 
 .auth-button:disabled { opacity: 0.45; cursor: default; }
 
+/* The plant picker on the listing form: a box to type in, and under it the
+   plants on the list that match, each with its botanical name. */
+.plant-picker { position: relative; }
+.plant-options {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin-top: 0.25rem;
+  max-height: 18rem;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #d6e0db;
+  border-radius: 0.5rem;
+  padding: 0.25rem 0;
+}
+.plant-options [role="option"] { display: block; padding: 0.5rem 0.75rem; cursor: pointer; }
+.plant-options [role="option"]:hover,
+.plant-options [role="option"][aria-selected="true"] { background: #f2e9dc; }
+.plant-option-common { display: block; font-weight: 500; color: #0b1710; }
+.plant-option-botanical { display: block; font-size: 0.8125rem; font-style: italic; color: #4a6b5a; }
+.plant-options-note { padding: 0.5rem 0.75rem; font-size: 0.875rem; color: #4a6b5a; }
+#plant-botanical { font-style: italic; }
+html.dark .plant-options { background: #0b1710; border-color: #24402f; }
+html.dark .plant-options [role="option"]:hover,
+html.dark .plant-options [role="option"][aria-selected="true"] { background: #1b3328; }
+html.dark .plant-option-common { color: #f5f5f4; }
+html.dark .plant-option-botanical,
+html.dark .plant-options-note { color: #bccdc4; }
+
 /* Grade tick boxes drawn as pills: the whole pill is the target. */
 .grade-tick { cursor: pointer; }
 .grade-tick input { position: absolute; opacity: 0; width: 0; height: 0; }

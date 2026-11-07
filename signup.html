@@ -88,7 +88,7 @@
   <script>
     // Already signed in? There is nothing to do here.
     PH.ready.then(function () {
-      if (PH.currentUser()) location.replace(PH.nextPage("account.html"));
+      if (PH.currentUser()) location.replace(PH.nextPage("inventory.html"));
     });
 
     // Keep the "come back here afterwards" page when moving to sign-in.
@@ -129,7 +129,7 @@
         document.getElementById("check-email").hidden = false;
         return;
       }
-      location.href = PH.nextPage("account.html?welcome=1");
+      location.href = PH.nextPage("inventory.html?welcome=1");
     });
 
     document.getElementById("resend").addEventListener("click", async function (event) {

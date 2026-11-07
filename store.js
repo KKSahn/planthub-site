@@ -26,6 +26,7 @@
     PH.loadDirectory()          every visible nursery with what it has on offer
     PH.loadNursery(id)          one nursery with what it has on offer
     PH.loadMyNursery()          the signed-in grower's nursery and all listings
+    PH.loadPlantList()          every plant a listing can name, A to Z
     PH.saveNursery({ ... })     change its name, city or specialties
     PH.saveListing({ ... })     add a listing, or change one (give its id)
     PH.removeListing(id)
@@ -42,7 +43,8 @@ const PH = (function () {
 
   const PHOTO_BUCKET = "listing-photos";
   const PAGE_SIZE = 1000;   // the most the database hands over in one go
-  const LISTING_COLUMNS = "id, nursery_id, common, botanical, container, caliper, height, spread, clear_trunk, grades, quantity, price, updated_on, photos";
+  // A listing's names come from the plant list, so a correction there shows at once.
+  const LISTING_COLUMNS = "id, nursery_id, plant_id, plant:plants(common, botanical), container, caliper, height, spread, clear_trunk, grades, quantity, price, updated_on, photos";
   const NURSERY_COLUMNS = "id, owner, name, city, state, specialties";
 
   // Read this before the library clears it from the address: an emailed link
@@ -342,8 +344,9 @@ const PH = (function () {
   function toPlant(row) {
     const plant = {
       id: row.id,
-      common: row.common,
-      botanical: row.botanical,
+      plantId: row.plant_id,
+      common: row.plant.common,
+      botanical: row.plant.botanical,
       container: row.container,
       grades: row.grades || [],
       quantity: row.quantity,
@@ -427,6 +430,22 @@ const PH = (function () {
     }
   }
 
+  // Every plant a listing can name. Growers pick from it; nobody types a name.
+  // It hardly ever changes, so it is fetched once per page.
+  let plantList = null;
+  async function loadPlantList() {
+    if (plantList) return { ok: true, plants: plantList };
+    try {
+      const rows = await allRows(function () {
+        return db.from("plants").select("id, common, botanical, kind").order("common").order("id");
+      });
+      plantList = rows;
+      return { ok: true, plants: plantList };
+    } catch (error) {
+      return { ok: false, error: sentence(error, "The plant list didn't load. Refresh the page to try again.") };
+    }
+  }
+
   // ---- 5. Changing them -----------------------------------------------------
   async function saveNursery(details) {
     if (!mine) return { ok: false, error: "You are signed out." };
@@ -504,11 +523,10 @@ const PH = (function () {
   // with today's date either way: touching a listing is confirming it.
   async function saveListing(details) {
     if (!mine) return { ok: false, error: "You are signed out." };
-    const common = String(details.common || "").trim();
     const quantity = Number(details.quantity);
     const price = Number(details.price);
 
-    if (!common) return { ok: false, field: "common", error: "Enter the plant's common name." };
+    if (!details.plantId) return { ok: false, field: "plant", error: "Pick a plant from the list." };
     if (!details.container) return { ok: false, field: "container", error: "Choose a container size." };
     if (details.quantity === "" || !Number.isInteger(quantity) || quantity < 0) {
       return { ok: false, field: "quantity", error: "Enter the exact number you have, as a whole number." };
@@ -518,8 +536,7 @@ const PH = (function () {
     if (price >= 100000000) return { ok: false, field: "price", error: "That price is too large." };
 
     const row = {
-      common: common,
-      botanical: String(details.botanical || "").trim(),
+      plant_id: details.plantId,
       container: details.container,
       grades: (details.grades || []).slice(),
       quantity: quantity,
@@ -736,6 +753,7 @@ const PH = (function () {
     loadDirectory: loadDirectory,
     loadNursery: loadNursery,
     loadMyNursery: loadMyNursery,
+    loadPlantList: loadPlantList,
     saveNursery: saveNursery,
     saveListing: saveListing,
     removeListing: removeListing,
